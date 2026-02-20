@@ -8,4 +8,5 @@ export {
   type ViewMode,
   type StoryboardSceneContext,
   type PopupInfo,
+  type SelectedRoom,
 } from "./storyboardSceneContent";

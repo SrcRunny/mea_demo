@@ -6,20 +6,35 @@ import {
   createStoryboardSceneContent,
   type ViewMode,
   type PopupInfo,
+  type SelectedRoom,
 } from "@/components/babylon";
 
 export default function RunPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("hotel");
   const [popup, setPopup] = useState<PopupInfo | null>(null);
+  const [selectedFloor, setSelectedFloor] = useState(8);
+  const [selectedRoom, setSelectedRoom] = useState<SelectedRoom | null>(null);
   const viewModeRef = useRef<ViewMode>(viewMode);
+  const selectedFloorRef = useRef(selectedFloor);
+  const selectedRoomRef = useRef<SelectedRoom | null>(selectedRoom);
   useEffect(() => {
     viewModeRef.current = viewMode;
   }, [viewMode]);
+  useEffect(() => {
+    selectedFloorRef.current = selectedFloor;
+  }, [selectedFloor]);
+  useEffect(() => {
+    selectedRoomRef.current = selectedRoom;
+  }, [selectedRoom]);
 
   const sceneContext = {
     getViewMode: useCallback(() => viewModeRef.current, []),
     setViewMode,
     setPopup,
+    getSelectedFloor: useCallback(() => selectedFloorRef.current, []),
+    setSelectedFloor,
+    getSelectedRoom: useCallback(() => selectedRoomRef.current, []),
+    setSelectedRoom,
   };
 
   return (
@@ -52,20 +67,30 @@ export default function RunPage() {
             <p className="text-sm font-medium text-emerald-400">85 / 100 ปกติ</p>
           </>
         )}
-        {viewMode === "floor8" && (
+        {viewMode === "floorPlan" && (
           <>
-            <p className="mb-1 text-xs text-zinc-400">ภาพรวมชั้น 8</p>
-            <p className="mb-1 text-sm text-white">จำนวนผู้ใช้ไฟฟ้า: 12 ห้อง</p>
-            <p className="text-xs text-zinc-400">Peak demand เฉพาะชั้น — ดูช่วงใช้ไฟหนัก</p>
+            <p className="mb-1 text-xs text-zinc-400">ภาพรวมชั้น {selectedFloor}</p>
+            <p className="mb-1 text-sm text-white">จำนวนผู้ใช้ไฟฟ้า: 8 ห้อง</p>
+            <p className="text-xs text-zinc-400">กดปุ่มด้านล่างเพื่อเข้าดูในห้อง</p>
           </>
         )}
-        {viewMode === "room802" && (
+        {viewMode === "room" && selectedRoom && (
           <>
             <p className="mb-1 text-xs text-zinc-400">ข้อมูลห้องพัก</p>
-            <p className="mb-1 text-sm font-medium text-white">ห้อง 802</p>
-            <p className="mb-1 text-sm text-zinc-300">ชื่อผู้เข้าพัก: สมชาย ใจดี</p>
-            <p className="mb-1 text-sm text-zinc-300">จำนวนผู้เข้าพัก: 2 ท่าน</p>
-            <p className="text-xs text-zinc-400">Check-in: 18 ก.พ. 2025 — Check-out: 20 ก.พ. 2025</p>
+            <p className="mb-1 text-sm font-medium text-white">
+              ห้อง {selectedRoom.floor * 100 + selectedRoom.room}
+            </p>
+            <p className="mb-1 text-sm text-zinc-300">
+              ชื่อผู้เข้าพัก: {selectedRoom.floor === 8 && selectedRoom.room === 2 ? "สมชาย ใจดี" : "—"}
+            </p>
+            <p className="mb-1 text-sm text-zinc-300">
+              จำนวนผู้เข้าพัก: {selectedRoom.floor === 8 && selectedRoom.room === 2 ? "2 ท่าน" : "0 ท่าน"}
+            </p>
+            <p className="text-xs text-zinc-400">
+              {selectedRoom.floor === 8 && selectedRoom.room === 2
+                ? "Check-in: 18 ก.พ. 2025 — Check-out: 20 ก.พ. 2025"
+                : "ห้องว่าง"}
+            </p>
           </>
         )}
       </div>
@@ -95,12 +120,12 @@ export default function RunPage() {
             </p>
           </>
         )}
-        {viewMode === "floor8" && (
+        {viewMode === "floorPlan" && (
           <p className="text-sm text-zinc-300">
-            กราฟ peak demand ชั้น 8 — โหลดตามช่วงเวลา
+            กราฟ peak demand ชั้น {selectedFloor} — โหลดตามช่วงเวลา
           </p>
         )}
-        {viewMode === "room802" && (
+        {viewMode === "room" && selectedRoom && (
           <>
             <p className="mb-2 text-xs text-zinc-400">รายละเอียดการใช้ไฟรายห้อง</p>
             <div className="mb-2 h-16 rounded bg-zinc-800/80 p-2 flex items-end gap-1">
@@ -113,38 +138,56 @@ export default function RunPage() {
               ))}
             </div>
             <p className="text-xs text-zinc-400">สถานการณ์จ่ายไฟในห้อง: ปกติ</p>
-            <p className="text-sm text-white">มิเตอร์ห้อง 802: 12.5 kWh (วันนี้)</p>
+            <p className="text-sm text-white">
+            มิเตอร์ห้อง {selectedRoom.floor * 100 + selectedRoom.room}: 12.5 kWh (วันนี้)
+          </p>
           </>
         )}
       </div>
 
       {/* Top bar: view mode button + back */}
-      <div className="absolute left-1/2 top-4 flex -translate-x-1/2 gap-2">
+      <div className="absolute left-1/2 top-4 z-30 flex -translate-x-1/2 flex-wrap justify-center gap-2">
         {(viewMode === "hotel" || viewMode === "floorExploded") && (
+          <>
+            <button
+              type="button"
+              onClick={() =>
+                setViewMode(viewMode === "hotel" ? "floorExploded" : "hotel")
+              }
+              className="rounded-lg border border-white/20 bg-black/60 px-4 py-2 text-sm font-medium text-white backdrop-blur hover:bg-white/10"
+            >
+              {viewMode === "hotel"
+                ? "มุมมองแยกชั้น"
+                : "กลับมุมมองรวม"}
+            </button>
+            {viewMode === "floorExploded" &&
+              [2, 3, 4, 5, 6, 7, 8].map((floorNum) => (
+                <button
+                  key={floorNum}
+                  type="button"
+                  onClick={() => {
+                    setSelectedFloor(floorNum);
+                    setViewMode("floorPlan");
+                  }}
+                  className="rounded-lg border-2 border-emerald-500/80 bg-emerald-600/90 px-4 py-2 text-sm font-bold text-white shadow-lg hover:bg-emerald-500"
+                >
+                  แผนผังชั้น {floorNum}
+                </button>
+              ))}
+          </>
+        )}
+        {(viewMode === "floorPlan" || viewMode === "room") && (
           <button
             type="button"
             onClick={() =>
-              setViewMode(viewMode === "hotel" ? "floorExploded" : "hotel")
+              setViewMode(viewMode === "floorPlan" ? "floorExploded" : "floorPlan")
             }
             className="rounded-lg border border-white/20 bg-black/60 px-4 py-2 text-sm font-medium text-white backdrop-blur hover:bg-white/10"
           >
-            {viewMode === "hotel"
-              ? "มุมมองแยกชั้น"
-              : "กลับมุมมองรวม"}
+            {viewMode === "room" ? "กลับไปแผนผังชั้น" : "กลับมุมมองรวม"}
           </button>
         )}
-        {(viewMode === "floor8" || viewMode === "room802") && (
-          <button
-            type="button"
-            onClick={() =>
-              setViewMode(viewMode === "floor8" ? "floorExploded" : "floor8")
-            }
-            className="rounded-lg border border-white/20 bg-black/60 px-4 py-2 text-sm font-medium text-white backdrop-blur hover:bg-white/10"
-          >
-            {viewMode === "room802" ? "กลับไปแผนผังชั้น" : "กลับมุมมองรวม"}
-          </button>
-        )}
-        {viewMode === "room802" && (
+        {viewMode === "room" && (
           <button
             type="button"
             onClick={() => setViewMode("floorExploded")}
@@ -154,6 +197,33 @@ export default function RunPage() {
           </button>
         )}
       </div>
+
+      {/* ปุ่มเข้าห้อง — แสดงเมื่ออยู่ที่แผนผังชั้น (ลอยกลางจอ อยู่บนสุด) */}
+      {viewMode === "floorPlan" && (
+        <div className="absolute left-1/2 top-20 z-50 w-full max-w-2xl -translate-x-1/2 rounded-2xl border-4 border-amber-400 bg-zinc-900 px-6 py-5 shadow-2xl">
+          <p className="mb-4 text-center text-base font-bold text-amber-400">
+            🚪 เข้าดูในห้อง — ชั้น {selectedFloor} (กดปุ่มด้านล่าง)
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((roomIndex) => {
+              const roomNum = selectedFloor * 100 + roomIndex;
+              return (
+                <button
+                  key={roomNum}
+                  type="button"
+                  onClick={() => {
+                    setSelectedRoom({ floor: selectedFloor, room: roomIndex });
+                    setViewMode("room");
+                  }}
+                  className="min-w-16 rounded-xl bg-amber-500 px-4 py-3 text-base font-bold text-black shadow-lg transition hover:bg-amber-400 hover:scale-105 active:scale-95"
+                >
+                  ห้อง {roomNum}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Popup (hover) */}
       {popup && (
@@ -166,7 +236,7 @@ export default function RunPage() {
         >
           {popup.type === "cabinet" && (
             <>
-              <p className="font-medium text-amber-300">ตู้ไฟประจำชั้น 8</p>
+              <p className="font-medium text-amber-300">ตู้ไฟประจำชั้น {popup.cabinetFloor ?? 8}</p>
               <p className="text-zinc-300">
                 Breaker ย่อย: {popup.breakerStatus ?? "—"}
               </p>

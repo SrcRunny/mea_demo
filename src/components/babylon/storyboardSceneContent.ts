@@ -7,12 +7,21 @@ import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import type { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 
-export type ViewMode = "hotel" | "floorExploded" | "floor8" | "room802";
+export type ViewMode = "hotel" | "floorExploded" | "floorPlan" | "room";
+
+export interface SelectedRoom {
+  floor: number;
+  room: number;
+}
 
 export interface StoryboardSceneContext {
   getViewMode: () => ViewMode;
   setViewMode: (m: ViewMode) => void;
   setPopup: (p: PopupInfo | null) => void;
+  getSelectedFloor: () => number;
+  setSelectedFloor: (n: number) => void;
+  getSelectedRoom: () => SelectedRoom | null;
+  setSelectedRoom: (r: SelectedRoom | null) => void;
 }
 
 export interface PopupInfo {
@@ -24,6 +33,7 @@ export interface PopupInfo {
   guests?: number;
   breakerStatus?: string;
   temperature?: string;
+  cabinetFloor?: number;
 }
 
 const S = 1;
@@ -215,19 +225,20 @@ function createGround(scene: Scene): AbstractMesh {
   return ground;
 }
 
-function createFloor8Plan(scene: Scene): { root: AbstractMesh; room802: AbstractMesh; cabinet: AbstractMesh } {
-  const floorPlane = MeshBuilder.CreateGround(
-    "floor8_plane",
+/** สร้างแผนผังชั้น floorNum (2–8): พื้น ทางเดิน ห้อง 801–808 (หรือ 701–708 ตาม floor) ตู้ไฟ */
+function createFloorPlan(scene: Scene, floorNum: number): void {
+  const plane = MeshBuilder.CreateGround(
+    `floor${floorNum}_plane`,
     { width: FLOOR_W + 4, height: FLOOR_D + 4 },
     scene
   );
-  floorPlane.position.y = 0.02;
-  const floorMat = new StandardMaterial("floor8_plane_mat", scene);
+  plane.position.y = 0.02;
+  const floorMat = new StandardMaterial(`floor${floorNum}_plane_mat`, scene);
   floorMat.diffuseColor = new Color3(0.9, 0.88, 0.85);
-  floorPlane.material = floorMat;
+  plane.material = floorMat;
 
   const corridor = MeshBuilder.CreateBox(
-    "floor8_corridor",
+    `floor${floorNum}_corridor`,
     { width: CORRIDOR_W, height: 0.1 * S, depth: FLOOR_D },
     scene
   );
@@ -259,9 +270,9 @@ function createFloor8Plan(scene: Scene): { root: AbstractMesh; room802: Abstract
     [planRight2, planRow1],
     [planRight2, planRow2],
   ];
-  let room802Mesh: AbstractMesh | null = null;
+
   for (let r = 0; r < 8; r++) {
-    const roomNum = 801 + r;
+    const roomNum = floorNum * 100 + (r + 1);
     const [rx, rz] = planPositions[r];
     const room = MeshBuilder.CreateBox(
       `room_${roomNum}`,
@@ -271,26 +282,17 @@ function createFloor8Plan(scene: Scene): { root: AbstractMesh; room802: Abstract
     room.position.set(rx, 0.08, rz);
     room.isPickable = true;
     room.material = roomNum === 802 ? greenMat : grayMat;
-    if (roomNum === 802) room802Mesh = room;
   }
 
   const cabinet = MeshBuilder.CreateBox(
-    "cabinet_8",
+    `cabinet_${floorNum}`,
     { width: 1.5 * S, height: 1.2 * S, depth: 0.8 * S },
     scene
   );
   cabinet.position.set(FLOOR_W / 2 - 1, 0.6, 0);
-  cabinet.material = new StandardMaterial("cabinet_mat", scene);
+  cabinet.material = new StandardMaterial(`cabinet_${floorNum}_mat`, scene);
   (cabinet.material as StandardMaterial).diffuseColor = new Color3(0.4, 0.4, 0.45);
   cabinet.isPickable = true;
-
-  const root = floorPlane;
-  root.setParent(null);
-  return {
-    root: floorPlane,
-    room802: room802Mesh!,
-    cabinet,
-  };
 }
 
 function createRoom802Interior(scene: Scene): AbstractMesh {
@@ -386,7 +388,7 @@ export function createStoryboardSceneContent(
 
   const ground = createGround(scene);
   const hotelFloors = createHotelFloors(scene);
-  createFloor8Plan(scene);
+  for (let fn = 2; fn <= 8; fn++) createFloorPlan(scene, fn);
   createRoom802Interior(scene);
 
   const camera = scene.activeCamera as ArcRotateCamera | null;
@@ -398,15 +400,15 @@ export function createStoryboardSceneContent(
   const defaultHotelBeta = Math.PI / 2.5;
 
   const explodeOffset = 1.5 * S;
-  const floor8Target = new Vector3(0, 0, 0);
-  const room802Target = new Vector3(0, 1.5, 0);
+  const floorPlanTarget = new Vector3(0, 0, 0);
+  const roomInteriorTarget = new Vector3(0, 1.5, 0);
 
   let lastViewMode: ViewMode | null = null;
 
   scene.onBeforeRenderObservable.add(() => {
     const viewMode = ctx?.getViewMode() ?? "hotel";
+    const selectedFloor = ctx?.getSelectedFloor?.() ?? 8;
 
-    // ตั้งค่ากล้องเฉพาะเมื่อเปลี่ยน viewMode เท่านั้น (ให้ผู้ใช้หมุน/ซูมได้ในมุมเดิม)
     if (viewMode !== lastViewMode) {
       lastViewMode = viewMode;
       if (viewMode === "hotel" || viewMode === "floorExploded") {
@@ -414,13 +416,13 @@ export function createStoryboardSceneContent(
         camera.radius = defaultHotelRadius;
         camera.alpha = defaultHotelAlpha;
         camera.beta = defaultHotelBeta;
-      } else if (viewMode === "floor8") {
-        camera.setTarget(floor8Target);
+      } else if (viewMode === "floorPlan") {
+        camera.setTarget(floorPlanTarget);
         camera.radius = 28;
         camera.alpha = -Math.PI / 2;
         camera.beta = Math.PI / 2.2;
-      } else if (viewMode === "room802") {
-        camera.setTarget(room802Target);
+      } else if (viewMode === "room") {
+        camera.setTarget(roomInteriorTarget);
         camera.radius = 6;
         camera.alpha = -Math.PI / 2 + 0.4;
         camera.beta = Math.PI / 2.3;
@@ -443,13 +445,25 @@ export function createStoryboardSceneContent(
       });
     });
 
-    scene.meshes
-      .filter((m) => m.name.startsWith("floor8_") || m.name.startsWith("room_8") || m.name === "cabinet_8")
-      .forEach((m) => m.setEnabled(viewMode === "floor8"));
+    const floorPlanActive = viewMode === "floorPlan";
+    for (let fn = 2; fn <= 8; fn++) {
+      const show = floorPlanActive && fn === selectedFloor;
+      scene.meshes
+        .filter((m) => {
+          if (m.name.startsWith(`floor${fn}_`) || m.name === `cabinet_${fn}`) return true;
+          const roomMatch = m.name.match(/^room_(\d+)$/);
+          if (roomMatch) {
+            const num = parseInt(roomMatch[1], 10);
+            return num >= fn * 100 && num < fn * 100 + 9;
+          }
+          return false;
+        })
+        .forEach((m) => m.setEnabled(show));
+    }
 
     scene.meshes
       .filter((m) => m.name.startsWith("room802_"))
-      .forEach((m) => m.setEnabled(viewMode === "room802"));
+      .forEach((m) => m.setEnabled(viewMode === "room"));
   });
 
   if (!ctx) return;
@@ -460,34 +474,38 @@ export function createStoryboardSceneContent(
       const pick = scene.pick(scene.pointerX, scene.pointerY);
       if (pick?.hit && pick.pickedMesh) {
         const name = pick.pickedMesh.name;
-        if (viewMode === "floorExploded" && name === "floor_8") {
+        if (viewMode === "floorExploded" && /^floor_[2-8]$/.test(name)) {
           scene.getEngine().getRenderingCanvas()!.style.cursor = "pointer";
-        } else if (viewMode === "floor8") {
-          if (name === "cabinet_8") {
+        } else if (viewMode === "floorPlan") {
+          const cabinetMatch = name.match(/^cabinet_(\d+)$/);
+          const roomMatch = name.match(/^room_(\d+)$/);
+          if (cabinetMatch) {
             ctx.setPopup({
               type: "cabinet",
               x: scene.pointerX,
               y: scene.pointerY,
               breakerStatus: "ทำงานปกติ",
               temperature: "42 °C",
+              cabinetFloor: parseInt(cabinetMatch[1], 10),
             });
-          } else if (name === "room_802") {
+          } else if (roomMatch) {
+            const roomNum = parseInt(roomMatch[1], 10);
             ctx.setPopup({
               type: "room",
               x: scene.pointerX,
               y: scene.pointerY,
-              room: 802,
-              status: "มีแขกเข้าพัก",
-              guests: 2,
+              room: roomNum,
+              status: roomNum === 802 ? "มีแขกเข้าพัก" : "ว่าง",
+              guests: roomNum === 802 ? 2 : 0,
             });
           } else {
             ctx.setPopup(null);
           }
+          if (roomMatch || cabinetMatch) {
+            scene.getEngine().getRenderingCanvas()!.style.cursor = "pointer";
+          }
         } else {
           ctx.setPopup(null);
-        }
-        if (viewMode === "floor8" && (name?.startsWith("room_") || name === "cabinet_8")) {
-          scene.getEngine().getRenderingCanvas()!.style.cursor = "pointer";
         }
       } else {
         ctx.setPopup(null);
@@ -502,10 +520,21 @@ export function createStoryboardSceneContent(
     const pick = scene.pick(scene.pointerX, scene.pointerY);
     if (!pick?.hit || !pick.pickedMesh) return;
     const name = pick.pickedMesh.name;
-    if (viewMode === "floorExploded" && name === "floor_8") {
-      ctx.setViewMode("floor8");
-    } else if (viewMode === "floor8" && name === "room_802") {
-      ctx.setViewMode("room802");
+    if (viewMode === "floorExploded") {
+      const floorMatch = name.match(/^floor_([2-8])$/);
+      if (floorMatch) {
+        ctx.setSelectedFloor(parseInt(floorMatch[1], 10));
+        ctx.setViewMode("floorPlan");
+      }
+    } else if (viewMode === "floorPlan") {
+      const roomMatch = name.match(/^room_(\d+)$/);
+      if (roomMatch) {
+        const roomNum = parseInt(roomMatch[1], 10);
+        const floor = Math.floor(roomNum / 100);
+        const room = (roomNum % 100);
+        ctx.setSelectedRoom({ floor, room });
+        ctx.setViewMode("room");
+      }
     }
   });
 }
