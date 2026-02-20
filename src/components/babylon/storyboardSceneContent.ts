@@ -322,6 +322,8 @@ export function createStoryboardSceneContent(
   createRoomInterior(scene, {
     meshPrefix: "room802",
     excludeFurniture: ["bed"],
+    wallTextureUrl: "/texture/wall1.jpg",
+    floorTextureUrl: "/texture/floor1.jpg",
   });
   loadInteriorModel(scene, "/models/Bed%20Double.glb", {
     name: "room802_bed",

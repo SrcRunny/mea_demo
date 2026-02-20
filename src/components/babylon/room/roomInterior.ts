@@ -5,6 +5,7 @@
 import type { Scene } from "@babylonjs/core/scene";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
+import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import type { RoomInteriorOptions, FurnitureItem } from "./types";
@@ -32,7 +33,14 @@ export function createRoomInterior(
   const furnitureList = rawFurniture.filter((item) => !exclude.has(item.id));
 
   const wallMat = new StandardMaterial(`${prefix}_wall`, scene);
-  wallMat.diffuseColor = new Color3(0.95, 0.94, 0.92);
+  if (options.wallTextureUrl) {
+    wallMat.diffuseTexture = new Texture(options.wallTextureUrl, scene);
+  } else {
+    // สีผนัง: ขาวครีมอ่อน (warm white)
+    wallMat.diffuseColor = new Color3(0.98, 0.97, 0.95);
+    // เพิ่ม specular เพื่อให้ผนังดูมีมิติ
+    wallMat.specularColor = new Color3(0.1, 0.1, 0.1);
+  }
 
   const floor = MeshBuilder.CreateBox(
     `${prefix}_floor`,
@@ -41,7 +49,11 @@ export function createRoomInterior(
   );
   floor.position.y = 0.05;
   const floorMat = new StandardMaterial(`${prefix}_floor_mat`, scene);
-  floorMat.diffuseColor = new Color3(0.6, 0.55, 0.5);
+  if (options.floorTextureUrl) {
+    floorMat.diffuseTexture = new Texture(options.floorTextureUrl, scene);
+  } else {
+    floorMat.diffuseColor = new Color3(0.6, 0.55, 0.5);
+  }
   floor.material = floorMat;
 
   const backWall = MeshBuilder.CreateBox(

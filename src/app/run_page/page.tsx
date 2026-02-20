@@ -10,10 +10,10 @@ import {
 } from "@/components/babylon";
 
 export default function RunPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>("hotel");
+  const [viewMode, setViewMode] = useState<ViewMode>("room");
   const [popup, setPopup] = useState<PopupInfo | null>(null);
   const [selectedFloor, setSelectedFloor] = useState(8);
-  const [selectedRoom, setSelectedRoom] = useState<SelectedRoom | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<SelectedRoom | null>({ floor: 8, room: 2 });
   const viewModeRef = useRef<ViewMode>(viewMode);
   const selectedFloorRef = useRef(selectedFloor);
   const selectedRoomRef = useRef<SelectedRoom | null>(selectedRoom);

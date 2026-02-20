@@ -15,6 +15,10 @@ export interface RoomInteriorOptions {
   furniture?: FurnitureItem[];
   /** id ที่ไม่ต้องสร้าง (ใช้โมเดลจากไฟล์แทน เช่น เตียงจาก GLB) */
   excludeFurniture?: string[];
+  /** URL ของ texture สำหรับผนัง (ถ้ามีจะใช้ texture แทนสี) */
+  wallTextureUrl?: string;
+  /** URL ของ texture สำหรับพื้น (ถ้ามีจะใช้ texture แทนสี) */
+  floorTextureUrl?: string;
 }
 
 /** รายการเฟอร์นิเจอร์ชิ้นหนึ่ง — แก้ตำแหน่ง/ขนาด/สีได้ใน defaultFurniture */
