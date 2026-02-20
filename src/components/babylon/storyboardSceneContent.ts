@@ -6,6 +6,7 @@ import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import type { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
+import { createRoomInterior } from "./room";
 
 export type ViewMode = "hotel" | "floorExploded" | "floorPlan" | "room";
 
@@ -295,78 +296,6 @@ function createFloorPlan(scene: Scene, floorNum: number): void {
   cabinet.isPickable = true;
 }
 
-function createRoom802Interior(scene: Scene): AbstractMesh {
-  const roomW = 5 * S;
-  const roomD = 4 * S;
-  const roomH = 2.8 * S;
-
-  const wallMat = new StandardMaterial("room_wall", scene);
-  wallMat.diffuseColor = new Color3(0.95, 0.94, 0.92);
-
-  const floor = MeshBuilder.CreateBox(
-    "room802_floor",
-    { width: roomW, height: 0.1, depth: roomD },
-    scene
-  );
-  floor.position.y = 0.05;
-  floor.material = new StandardMaterial("room_floor", scene);
-  (floor.material as StandardMaterial).diffuseColor = new Color3(0.6, 0.55, 0.5);
-
-  const backWall = MeshBuilder.CreateBox(
-    "room802_back",
-    { width: roomW + 0.2, height: roomH, depth: 0.15 },
-    scene
-  );
-  backWall.position.set(0, roomH / 2, -roomD / 2);
-  backWall.material = wallMat;
-
-  const leftWall = MeshBuilder.CreateBox(
-    "room802_left",
-    { width: 0.15, height: roomH, depth: roomD },
-    scene
-  );
-  leftWall.position.set(-roomW / 2, roomH / 2, 0);
-  leftWall.material = wallMat;
-
-  const rightWall = MeshBuilder.CreateBox(
-    "room802_right",
-    { width: 0.15, height: roomH, depth: roomD },
-    scene
-  );
-  rightWall.position.set(roomW / 2, roomH / 2, 0);
-  rightWall.material = wallMat;
-
-  const bed = MeshBuilder.CreateBox(
-    "room802_bed",
-    { width: 2 * S, height: 0.5 * S, depth: 1.2 * S },
-    scene
-  );
-  bed.position.set(-1, 0.25, -0.8);
-  bed.material = new StandardMaterial("bed", scene);
-  (bed.material as StandardMaterial).diffuseColor = new Color3(0.5, 0.4, 0.6);
-
-  const ac = MeshBuilder.CreateBox(
-    "room802_ac",
-    { width: 1.2 * S, height: 0.3 * S, depth: 0.4 * S },
-    scene
-  );
-  ac.position.set(0, roomH - 0.2, -roomD / 2 + 0.2);
-  ac.material = new StandardMaterial("ac", scene);
-  (ac.material as StandardMaterial).diffuseColor = new Color3(0.85, 0.85, 0.88);
-
-  const lamp = MeshBuilder.CreateBox(
-    "room802_lamp",
-    { width: 0.3 * S, height: 0.5 * S, depth: 0.3 * S },
-    scene
-  );
-  lamp.position.set(1.2, 0.25, 0.5);
-  lamp.material = new StandardMaterial("lamp", scene);
-  (lamp.material as StandardMaterial).diffuseColor = new Color3(0.9, 0.85, 0.5);
-  (lamp.material as StandardMaterial).emissiveColor = new Color3(0.15, 0.12, 0.05);
-
-  return floor;
-}
-
 export function createStoryboardSceneContent(
   scene: Scene,
   context?: unknown
@@ -389,7 +318,7 @@ export function createStoryboardSceneContent(
   const ground = createGround(scene);
   const hotelFloors = createHotelFloors(scene);
   for (let fn = 2; fn <= 8; fn++) createFloorPlan(scene, fn);
-  createRoom802Interior(scene);
+  createRoomInterior(scene, { meshPrefix: "room802" });
 
   const camera = scene.activeCamera as ArcRotateCamera | null;
   if (!camera || !("setTarget" in camera)) return;

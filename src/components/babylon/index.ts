@@ -10,3 +10,9 @@ export {
   type PopupInfo,
   type SelectedRoom,
 } from "./storyboardSceneContent";
+export {
+  createRoomInterior,
+  defaultFurniture,
+  type RoomInteriorOptions,
+  type FurnitureItem,
+} from "./room";
