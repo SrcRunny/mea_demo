@@ -10,7 +10,9 @@ export interface Scene3DProps {
   className?: string;
   style?: React.CSSProperties;
   /** Custom scene content. Default: torus knot + ground. */
-  createContent?: (scene: Scene) => void;
+  createContent?: (scene: Scene, context?: unknown) => void;
+  /** Optional context passed to createContent (e.g. viewMode, setViewMode for interactive scenes). */
+  sceneContext?: unknown;
 }
 
 /**
@@ -21,9 +23,10 @@ export function Scene3D({
   className,
   style,
   createContent = createDefaultSceneContent,
+  sceneContext,
 }: Scene3DProps) {
   const onSceneReady = useCallback(
-    (_engine: Engine, scene: Scene) => createContent(scene),
+    (_engine: Engine, scene: Scene, ctx?: unknown) => createContent(scene, ctx),
     [createContent]
   );
 
@@ -32,6 +35,7 @@ export function Scene3D({
       className={className}
       style={style}
       onSceneReady={onSceneReady}
+      sceneContext={sceneContext}
     />
   );
 }

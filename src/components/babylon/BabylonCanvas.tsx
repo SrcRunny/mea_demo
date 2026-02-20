@@ -10,12 +10,18 @@ import { Vector3 } from "@babylonjs/core/Maths/math";
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
 import { Color4 } from "@babylonjs/core/Maths/math.color";
 
-export type OnSceneReady = (engine: Engine, scene: Scene) => void | (() => void);
+
+export type OnSceneReady = (
+  engine: Engine,
+  scene: Scene,
+  context?: unknown
+) => void | (() => void);
 
 export interface BabylonCanvasProps {
   className?: string;
   style?: React.CSSProperties;
   onSceneReady: OnSceneReady;
+  sceneContext?: unknown;
   antialias?: boolean;
   adaptToDeviceRatio?: boolean;
 }
@@ -29,6 +35,7 @@ export function BabylonCanvas({
   className,
   style,
   onSceneReady,
+  sceneContext,
   antialias = true,
   adaptToDeviceRatio = true,
 }: BabylonCanvasProps) {
@@ -37,9 +44,9 @@ export function BabylonCanvas({
 
   const onReady = useCallback(
     (engine: Engine, scene: Scene) => {
-      cleanupRef.current = onSceneReady(engine, scene);
+      cleanupRef.current = onSceneReady(engine, scene, sceneContext);
     },
-    [onSceneReady]
+    [onSceneReady, sceneContext]
   );
 
   useEffect(() => {
@@ -66,6 +73,12 @@ export function BabylonCanvas({
     camera.attachControl(canvas, true);
     camera.wheelPrecision = 50;
     camera.minZ = 0.1;
+    camera.lowerRadiusLimit = 2;
+    camera.upperRadiusLimit = 200;
+
+    // ป้องกันไม่ให้เบราว์เซอร์ใช้ wheel เป็น scroll หน้า เพื่อให้ zoom ทำงาน
+    const onWheel = (e: WheelEvent) => e.preventDefault();
+    canvas.addEventListener("wheel", onWheel, { passive: false });
 
     // Default light
     new HemisphericLight(
@@ -84,6 +97,7 @@ export function BabylonCanvas({
     engine.runRenderLoop(() => scene.render());
 
     return () => {
+      canvas.removeEventListener("wheel", onWheel);
       window.removeEventListener("resize", resize);
       if (typeof cleanupRef.current === "function") cleanupRef.current();
       scene.dispose();
@@ -92,10 +106,14 @@ export function BabylonCanvas({
   }, [antialias, adaptToDeviceRatio, onReady]);
 
   return (
-    <canvas
-      ref={canvasRef}
+    <div
       className={className}
-      style={{ width: "100%", height: "100%", display: "block", ...style }}
-    />
+      style={{ width: "100%", height: "100%", display: "block", overflow: "hidden", ...style }}
+    >
+      <canvas
+        ref={canvasRef}
+        style={{ width: "100%", height: "100%", display: "block" }}
+      />
+    </div>
   );
 }

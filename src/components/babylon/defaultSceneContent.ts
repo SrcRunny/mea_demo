@@ -8,7 +8,7 @@ import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial";
  * Adds a reusable default 3D scene: torus knot + ground with PBR-style materials.
  * Call from onSceneReady: createDefaultSceneContent(scene)
  */
-export function createDefaultSceneContent(scene: Scene): void {
+export function createDefaultSceneContent(scene: Scene, _context?: unknown): void {
   const knot = MeshBuilder.CreateTorusKnot("knot", {
     radius: 0.8,
     tube: 0.25,
