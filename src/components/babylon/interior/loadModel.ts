@@ -4,14 +4,16 @@
  */
 import type { Scene } from "@babylonjs/core/scene";
 import { Vector3 } from "@babylonjs/core/Maths/math";
-import { ImportMeshAsync } from "@babylonjs/core/Loading/sceneLoader";
+import { ImportMeshAsync, RegisterSceneLoaderPlugin } from "@babylonjs/core/Loading/sceneLoader";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 
 // ลงทะเบียน GLTF/GLB loader (เรียกครั้งเดียวในแอป)
 let gltfRegistered = false;
 export function registerGLTFLoader(): Promise<void> {
   if (gltfRegistered) return Promise.resolve();
-  return import("@babylonjs/loaders/glTF").then(() => {
+  return import("@babylonjs/loaders/glTF").then((m) => {
+    const { GLTFFileLoader } = m;
+    RegisterSceneLoaderPlugin(new GLTFFileLoader());
     gltfRegistered = true;
   });
 }
@@ -35,7 +37,7 @@ export async function loadInteriorModel(
 ): Promise<AbstractMesh[]> {
   await registerGLTFLoader();
 
-  const ext = modelUrl.includes(".glb") ? "glb" : "gltf";
+  const ext = modelUrl.includes(".glb") ? ".glb" : ".gltf";
   const result = await ImportMeshAsync(modelUrl, scene, {
     pluginExtension: ext,
   });

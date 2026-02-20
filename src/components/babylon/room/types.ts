@@ -13,6 +13,8 @@ export interface RoomInteriorOptions {
   roomHeight?: number;
   /** รายการเฟอร์นิเจอร์ (ไม่ส่งจะใช้ defaultFurniture) */
   furniture?: FurnitureItem[];
+  /** id ที่ไม่ต้องสร้าง (ใช้โมเดลจากไฟล์แทน เช่น เตียงจาก GLB) */
+  excludeFurniture?: string[];
 }
 
 /** รายการเฟอร์นิเจอร์ชิ้นหนึ่ง — แก้ตำแหน่ง/ขนาด/สีได้ใน defaultFurniture */

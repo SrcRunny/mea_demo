@@ -7,6 +7,7 @@ import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import type { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { createRoomInterior } from "./room";
+import { loadInteriorModel } from "./interior";
 
 export type ViewMode = "hotel" | "floorExploded" | "floorPlan" | "room";
 
@@ -318,7 +319,15 @@ export function createStoryboardSceneContent(
   const ground = createGround(scene);
   const hotelFloors = createHotelFloors(scene);
   for (let fn = 2; fn <= 8; fn++) createFloorPlan(scene, fn);
-  createRoomInterior(scene, { meshPrefix: "room802" });
+  createRoomInterior(scene, {
+    meshPrefix: "room802",
+    excludeFurniture: ["bed"],
+  });
+  loadInteriorModel(scene, "/models/Bed%20Double.glb", {
+    name: "room802_bed",
+    position: { x: -0.4, y: 0.1, z: 1.3 },
+    scaling: 0.5,
+  });
 
   const camera = scene.activeCamera as ArcRotateCamera | null;
   if (!camera || !("setTarget" in camera)) return;

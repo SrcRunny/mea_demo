@@ -27,7 +27,9 @@ export function createRoomInterior(
   const roomW = options.roomWidth ?? DEFAULT_ROOM_W;
   const roomD = options.roomDepth ?? DEFAULT_ROOM_D;
   const roomH = options.roomHeight ?? DEFAULT_ROOM_H;
-  const furnitureList = options.furniture ?? defaultFurniture;
+  const rawFurniture = options.furniture ?? defaultFurniture;
+  const exclude = new Set(options.excludeFurniture ?? []);
+  const furnitureList = rawFurniture.filter((item) => !exclude.has(item.id));
 
   const wallMat = new StandardMaterial(`${prefix}_wall`, scene);
   wallMat.diffuseColor = new Color3(0.95, 0.94, 0.92);
@@ -66,7 +68,7 @@ export function createRoomInterior(
   rightWall.position.set(roomW / 2, roomH / 2, 0);
   rightWall.material = wallMat;
 
-  furnitureList.forEach((item) => {
+  furnitureList.forEach((item: FurnitureItem) => {
     const mesh = MeshBuilder.CreateBox(
       `${prefix}_${item.id}`,
       {
