@@ -328,6 +328,56 @@ export function createStoryboardSceneContent(
     position: { x: -0.4, y: 0.1, z: 1.3 },
     scaling: 0.5,
   });
+  loadInteriorModel(scene, "/models/Night%20Stand.glb", {
+    name: "room802_nightstand",
+    position: { x: -1.1, y: 0, z: 1.7 },
+    scaling: 1,
+  });
+  loadInteriorModel(scene, "/models/Night%20Stand.glb", {
+    name: "room802_nightstand",
+    position: { x: 1, y: 0, z: 1.7 },
+    scaling: 1,
+  });
+  loadInteriorModel(scene, "/models/Closet.glb", {
+    name: "room802_closet",
+    position: { x: 2.4, y: 0, z: -1.6 },
+    rotation: { y: Math.PI * 2 },
+    scaling: 0.5,
+  });
+  loadInteriorModel(scene, "/models/Kitchen%20Fridge.glb", {
+    name: "room802_fridge",
+    position: { x: -1.8, y: 0, z: -1.6 },
+    rotation: { y: Math.PI * 2 },
+    scaling: 0.5,
+  });
+  loadInteriorModel(scene, "/models/Flat%20Screen%20TV.glb", {
+    name: "room802_tv",
+    position: { x: 0.2, y: 1.2, z: -1.9 },
+    rotation: { y: Math.PI * 2 },
+    scaling: 0.5,
+  });
+  loadInteriorModel(scene, "/models/Air%20conditioner.glb", {
+    name: "room802_ac",
+    position: { x: 0, y: 2.4, z: -1.8 },
+    scaling: 0.002,
+  });
+  loadInteriorModel(scene, "/models/Door.glb", {
+    name: "room802_door",
+    position: { x: -2.9, y: 0.85, z: 1.5 },
+    scaling: 0.4,
+  });
+  loadInteriorModel(scene, "/models/Lamp.glb", {
+    name: "room802_lamp",
+    position: { x: 1, y: 0.5, z: 1.7 },
+    rotation: { y: Math.PI * 2 },
+    scaling: 0.003,
+  });
+  loadInteriorModel(scene, "/models/Lamp.glb", {
+    name: "room802_lamp",
+    position: { x: -1.1, y: 0.5, z: 1.7 },
+    rotation: { y: Math.PI * 2 },
+    scaling: 0.003,
+  });
 
   const camera = scene.activeCamera as ArcRotateCamera | null;
   if (!camera || !("setTarget" in camera)) return;
@@ -399,9 +449,13 @@ export function createStoryboardSceneContent(
         .forEach((m) => m.setEnabled(show));
     }
 
+    const showRoom = viewMode === "room";
     scene.meshes
       .filter((m) => m.name.startsWith("room802_"))
-      .forEach((m) => m.setEnabled(viewMode === "room"));
+      .forEach((m) => m.setEnabled(showRoom));
+    scene.transformNodes
+      .filter((n) => n.name.startsWith("room802_"))
+      .forEach((n) => n.setEnabled(showRoom));
   });
 
   if (!ctx) return;

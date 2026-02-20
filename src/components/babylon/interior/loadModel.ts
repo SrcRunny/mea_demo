@@ -6,6 +6,7 @@ import type { Scene } from "@babylonjs/core/scene";
 import { Vector3 } from "@babylonjs/core/Maths/math";
 import { ImportMeshAsync, RegisterSceneLoaderPlugin } from "@babylonjs/core/Loading/sceneLoader";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
+import type { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 
 // ลงทะเบียน GLTF/GLB loader (เรียกครั้งเดียวในแอป)
 let gltfRegistered = false;
@@ -43,7 +44,16 @@ export async function loadInteriorModel(
   });
 
   const meshes = result.meshes.filter((m) => m.getClassName?.() === "TransformNode" || m.getClassName?.() === "Mesh") as AbstractMesh[];
-  const root = meshes[0];
+  const set = new Set(meshes);
+  // หา root จริงของโมเดล (โหนดบนสุดของ hierarchy) — บาง GLB มี root เป็น TransformNode ที่ไม่อยู่ใน result.meshes
+  let node: TransformNode | AbstractMesh = meshes[0];
+  while (node.parent && set.has(node.parent as AbstractMesh)) {
+    node = node.parent as AbstractMesh;
+  }
+  const root: TransformNode =
+    node.parent && !set.has(node.parent as AbstractMesh)
+      ? (node.parent as TransformNode)
+      : (node as TransformNode);
   if (!root) return meshes;
 
   if (options.name) root.name = options.name;
@@ -57,6 +67,7 @@ export async function loadInteriorModel(
   }
 
   if (options.rotation) {
+    root.rotationQuaternion = null;
     const r = options.rotation;
     if (r.x != null) root.rotation.x = r.x;
     if (r.y != null) root.rotation.y = r.y;
